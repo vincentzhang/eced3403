@@ -1,7 +1,7 @@
 #include "Z8_emulator.h"
 #include <stdio.h>
 #include <stdlib.h>
-
+/*testtest*/
 void bus(WORD mar, BYTE *mbr, enum RDWR rdwr, enum MEM mem)
 {
 /* Bus emulation:
