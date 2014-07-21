@@ -22,7 +22,7 @@
 #define WORD       unsigned short
 
 #define IRQ_MASK  0x3F             /* IRQ bits 0..5 in IMR */
-enum IMR_BITS     {IRQ0 = 0x01, IRQ1 = 0x02, IRQ2 = 0x04, INT_ENA = 0x80};
+enum IMR_BITS     {IRQ0 = 0x01, IRQ1 = 0x02, IRQ2 = 0x04, IRQ3=0x08, INT_ENA = 0x80};
 
 /* Program and data memory */
 extern BYTE memory[][]; 

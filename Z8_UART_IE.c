@@ -44,5 +44,13 @@ void UART_check()
    - decrement TX timer if running
    - when timer reaches zero, "transmit" character 
 */
+int sysclock;
+// what is TX timer?
+int txtimer;
+
+// read from file
+
+
+
 
 }
