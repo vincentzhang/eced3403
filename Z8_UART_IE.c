@@ -30,12 +30,73 @@
 
 #include "Z8_IE.h"
 
+//variable lists
+PRIVATE unsigned long TXTimer;
+FILE *fpin, *fpout; // input and output file 
+BYTE data[LINE_LEN];// keep data read from the input file
+
+unsigned int UART_TIME; // the time read from input file
+BYTE UART_RECV_REG; // the input register
+BYTE UART_TRAN_REG; // the output register
+unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buffer
+
 int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
 {
 /* Emulate UART device port:
    - called after Port 3 or SIO have been read or written 
 */
-
+  if (cmd == REG_RD)  // Z8 reading from UART device
+// READ: Z8 read from UART
+// Data on P30-P33(File in our case) -> Input Buffer -> Input Register -> BUS
+// Reading from P3 returns the data on the input pins and in the output register
+  {
+    if (sys_clock >= UART_TIME)
+    {
+      if (!UART_RECV_PENDING) // if pending, do NOT do anything
+      {
+          if ( fgets(data, LINE_LEN, fpin) > 0 )
+          { // if there's still content in the file, read and write to UART device
+            // file format: time, device, data
+            UART_TIME = data[0]; // save the next interrupt time
+            UART_RECV_REG = data[2];
+            UART_RECV_PENDING = TRUE;
+            
+            if ( UART_RECV_PENDING && (reg_mem[PORT3].contents & RCVDONE) ) // if still pending, must raise overrun
+            {
+              reg_mem[PORT3].contents|=RCVORUN; // raise OVERRUN
+            }
+            else
+            {
+              reg_mem[SIO] . contents = UART_RECV_REG; // load the input register content to SIO
+              // clear the register and interrupt initialization
+              UART_RECV_PENDING = FALSE; // nothing in the input register
+              UART_RECV_REG = 0x00; // clear all the bits
+              reg_mem[PORT3].contents &= ~RCVDONE; // no data in the input register
+              reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
+            }
+          }
+      } 
+    }
+  }
+// Port 3 lines are fixed as four input
+// (P30-P33) and four output (P34-P37) and do not have an input and output register for each bit.
+  else if (cmd == REG_WR)
+  {
+      // TODO: write to PORT 
+      if ( reg_mem[PORT3].contents & TXORUN ) // if Overrun    
+      {
+          reg_mem[PORT3].contents &= ~TXORUN; // clear OVERRUN
+      }
+      else // reload
+      {
+          if (reg_mem[PORT3].contents & TXDONE)   // if the previous transmit is done
+          {
+             reg_mem[SIO] . contents = 0x12;  // TODO: Write something to PORT3
+          }     
+          TXTimer = sys_clock + 100; 
+          reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
+      }
+  }
 }
 
 void UART_check()
@@ -44,13 +105,12 @@ void UART_check()
    - decrement TX timer if running
    - when timer reaches zero, "transmit" character 
 */
-int sysclock;
+// int sysclock;
 // what is TX timer?
-int txtimer;
 
-// read from file
-
-
-
-
+   TXTimer--;
+   if ( TXTimer == 0)
+   {
+      reg_mem[IRQ] . contents |= IRQ3;  /* Signal IRQ3 - UART interrupt */
+   }
 }

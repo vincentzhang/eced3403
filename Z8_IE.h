@@ -13,6 +13,7 @@
 
 #define DIAGNOSTIC
 #define IE_TEST        /* IE test */
+#define LINE_LEN   256
 
 #define FALSE      0
 #define TRUE       1
@@ -64,6 +65,11 @@ extern int TIMER_device(BYTE, enum DEV_EM_IO);
 extern int UART_device(BYTE, enum DEV_EM_IO);
 
 /* UART bits */
-#define TXDONE     0x04
+#define TXDONE     0x04 // B2
+#define TXORUN     0x08 // B3
+#define RCVDONE    0x10 // B4
+#define RCVORUN    0x20 // B5
+
+extern unsigned long sys_clock;
 
 #endif
