@@ -77,6 +77,16 @@ BYTE regval;     /* temp to emulate OR instruction */
 running = TRUE;
 sanity = 0;
 
+
+//variable for case test
+BYTE src;        //SRC operand 
+BYTE dst;        // DST operand 
+BYTE hnib;   //MS nibble 
+BYTE lnib;    // LS nibble 
+
+
+
+
 // variables for register operations
 BYTE flag;
 int iret=0;//if meet iret:1 
