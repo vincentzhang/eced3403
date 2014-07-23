@@ -22,7 +22,11 @@ while (fgets(instring, LINE_LEN, fp) != NULL)
  
 	instring[LINE_LEN-1] = NUL;
 	load(instring);/* loader*/
-  
+  /* load() cannot be called this way.
+  The way it works is that it opens a file *fp and read line by line and process it based on the first two letters (S1,S2,S3...).
+  But what this load(instring) does is passing the line as an input argument, doesn't match the argument lister of load function. 
+  We'll fix this later.
+  */
 	
 }
 
