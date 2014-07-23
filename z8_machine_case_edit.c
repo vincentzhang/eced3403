@@ -116,26 +116,13 @@ while (running && sanity < 24)
      	 /*check LS 2-7 the special case*//*----------------need to fill up*/
      	 
      	 
-     	 if(lnib >= 0x02 && lnib <= 0x07)
-     	 {
-     	 	if() 
-     	
-     	
-     	
-     	
-     	 }
-	
-	
-	/* Check for lnib: 
-	 case:0x08 - 0x0E 
-	 case 0x0F - no-operand instruction*/
-	else if (lnib >= 0x08)
+     	if (lnib >= 0x08)
 	{
 	  switch(lnib)
           {
           case 0x08: // LD r, R 
                src = prog_mem_fetch();
-               reg_mem[(RP<<4)|hnib].contents = reg_mem[src].contents;//load the contents from source to dest
+               reg_mem[RPBLK|hnib].contents = reg_mem[src].contents;//load the contents from source to dest
                sanity+=6; 
           	break;  
           case 0x09: // LD R,r 
@@ -143,52 +130,305 @@ while (running && sanity < 24)
                reg_mem[dst].contents = reg_mem[(RP<<4)| hnib].contents;//
                sanity+=6; 
                break;               	
-          case 0x0A: /* DJNZ r, dst */
+          case 0x0A: //DJNZ r, dst
                dst = prog_mem_fetch();
-               src = RPBLK | high_nib;
-               reg_mem[src] -= 1;
-               if (reg_mem[src] != 0)
-                   /* Reg != 0 -- repeat loop */
-                   /* Signed extend dst to 16 bits if -ve */
-                   pc = pc + SIGN_EXT(dst);
-               C=Z=S=V=0;	//disable all flags changed
+               src= (RPBLK| hnib;
+               reg_mem[src].contents-=1;
+               if (reg_me[src].contents!= 0)		 
+			   pc = pc+SIGN_EXT(dst);//jump to the relative address is +127-128 
                break;
-          case 0x0B: /* JR cc,RA*/
-          	   cc = high_nib;
+          
+		  case 0x0B: /* JR cc,RA*/     
+          	   cc = hnib;           //????????????????????
           	   dst = prog_mem_fetch();
-          	   if(cc_check(cc)) //the condition has been satisfied
+          	   if(check_cc(cc)) //cc is true   
           		pc = pc+ SIGN_EXT(dst);
-          	   C=Z=S=V=0;	//disable all flags changed
-			   break;               
-          case 0x0C: /* LD dst, IMM */
+          	    break;               
+          
+		  case 0x0C: /* LD dst, IMM */
                src = prog_mem_fetch();
-               reg_mem[RPBLK | high_nib] = src;    
-               C=Z=S=V=0;	//disable all flags changed
-			   break;
-          case 0x0D: /* JP cc,DA*/
-          	   cc = high_nib;
-		  	   temph = prog_mem_fetch();
-		  	   templ = prog_mem_fetch();
-			   if(cc_check(cc))			   	   
-				    pc = temph<<8|templ;//the condition has been satisfied
-
-          	   C=Z=S=V=0;	//disable all flags changed
+               reg_mem[RPBLK | hnib] = src;    
+              break;
+          
+		  case 0x0D: // JP cc,DA
+          	   cc = hnib;
+		  	   dsth = prog_mem_fetch();  
+		  	   dstl = prog_mm_fetch();
+			   if(check_cc(cc))			   	   
+				    pc = dsth<<8|dstl;//the condition true
 			   break;              
-          case 0x0E: /* INC dst */
-               dst = RPBLK | high_nib; //RPBLK is fixed + the high_nib give the r0~r15
-               pre_sign = SIGN(reg_mem[dst]);//determine negative SIGN return 128 if negative
+          
+		  case 0x0E: /* INC dst re r 6*/   //??????????????  not sure flag 
+               dst = RPBLK | hnib; 
+               sign = SIGN(reg_mem[dst]);//check the sign
                reg_mem[dst] += 1;
-               sign = SIGN(reg_mem[dst]);//determine negative
-               post_carry=reg_mem[dst];// use post_carry because
-									   // FLAGS function for carry is determine by post_carry
-									   // see instruction before "sanity++" instruction
-               C=0;	//disable all flags changed except S,V,Z
+               
+			  ///???????????   check example 
+              
                break;
             
           case 0x0F: /* STOP .. NOP */
+          switch (hnib)
+               {
+               case 0x06: // stop 6f  
+                    running = FALSE;
+               		break;
+               //case 0x07: /*HALT */???????????????????????????????????????
+               		
+               case 0x08: /* DI dst */
+               		reg_mem[IMR].contents &= ~INT_ENA;//disable interrrupt	
+               		sanity+=6;
+               		break;
+               
+               case 0x09: // EI  
+               		reg_mem[IMR].contents |= INT_ENA;//IMR  0x80 bit 7 set
+               		sanity+=6;
+               		break;
+               
+               case 0x0A: /* RET     ??????????????????????
+               		temphigh = reg_mem[SPH];
+               		templow = reg_mem[SPL];
+               		pc = ((temphigh << 8) | templow);
+               		reg_mem[SPL] += 2;
+               		C=Z=S=V=D=H=F2=F1=0;*/
+               		sanity+=14;
+               break;
+               
+               
+			   case 0x0B: //IRET  ????????  INTERRUPT RETURN  check interrupt with below code
+               		
+					   
+					pc = PC_saved ;
+					reg_mem[FLAGS].contents= FLAGS_saved ;
+					reg_mem[IMR] . contents |= INT_ENA;//reenable the interrupt
+					printf("Interrupt return to %04x\n",pc);
+					printf("Flag before interrupt %02x\n",FLAGS_saved);
+               		sanity+=16;
+            
+               break;
+               
+               case 0x0C: //RCF 
+               		reg_mem[FLAGS].contents	 = FLAG_C(0); // clear flag C to 0 
+					sanity+=6; 
+               		break;
+               
+               case 0x0D: //SCF 
+                    reg_mem[FLAGS].contents	 = FLAG_C(1); // Set carry flag
+					sanity+=6;	
+               		break;
+               
+               case 0x0E: //CCF 
+					int c1// c flag complement 
+					c1=~C;
+					reg_mem[FLAGS].contents	 = FLAG_C(c1);
+					sanity+=6;
+			        break;
+			   
+               case 0x0F: /* NOP */
+               		sanity+=6;
+               		break;
+               }
+          break;
+          }
+     }
+  
+  /*check low nibblee through 0x00 0x07*/
+  else if((lnib>=0x02)&&(lnib<=0x07))
+     {
+	 	/*IF high nib through 0-7 and A,B low nibble could be 2-7*/  
+		 if((hnib>=0x00 && hnib<=0x07) || (high_nib==0X0A)||(hnib==0x0B) )
+		{ 						
+				
+				/*determide the address mode*/
+				switch(lnib)
+				{
+					case 0x02: /* r r */
+						ds = prog_mem_fetch();
+						dst = reg_mem[RPBLK|HBYTE(ds)].contents;
+						src = reg_mem[RPBLK|LBYTE(ds)].contents;
+						temp = RPBLK|MSN(ds);	
+						sanity+=6;					
+						break;
+					
+					case 0x03: /* r Ir */
+						ds = prog_mem_fetch();
+						dst = reg_mem[RPBLK|HBYTE(ds)].contents;
+						src = reg_mem[RPBLK|LBYTE(ds)].contents;
+						src = reg_mem[src].contents; // get the content of location
+						temp = RPBLK|HBYTE(ds);
+						sanity+=6; 
+						break;
+					case 0x04: /* R R */
+						src = prog_mem_fetch();
+						dst = prog_mem_fetch();
+						src = reg_mem[src].contents;
+						dst = reg_mem[dst].contents;
+						sanity+=10;
+						break;
+					case 0x05: /* R IR */
+						src = prog_mem_fetch();
+						dst = prog_mem_fetch();
+						src = reg_mem[src].contents; // the content is new location 
+						src = reg_mem[src].contents; 
+						dst = reg_mem[dst].contents;
+						sanity+=10;
+						break;
+					
+					case 0x06: /* R IM */
+						dst = prog_mem_fetch();
+						src = prog_mem_fetch(); 
+						dst = reg_mem[dst].contents;
+						sanity+=10;
+					    break;
+					
+					case 0x07: /* IR IM */
+						dst = prog_mem_fetch();
+						src = prog_mem_fetch();
+						dst = reg_mem[dst].contents; // the content is new location 
+						dst = reg_mem[dst].contents; //get the content
+						sanity+=10;
+					    break;
+				}
+				
+				pre_sign = SIGN(dst); // sign of previous value												
+				
+				switch(hnib)
+				{
+					case 0x00: /* ADD */
+						
+						
+						pre_carry = reg_mem[temp].contents = post_carry = dst + src; // last operation value
+																			  // last operation value with carry byte
+						//reg_mem[temp].contents = post_carry = dst + src;													
+						reg_mem[FLAGS].contents	 = FLAG_H((pre_carry&0x0F)!=((dst&0x0F)+(src&0X0F))); //set if a carry from the low-order nibble occurred 
+						flag_d = 0;
+						break;
+					case 0x01: /* ADC */
+						/* dst = dst + src +c
+						   first, get the sum of dst and src without carry -> sum
+						   second, get the sum of dst and src with carry,
+						   then right shift 8 bits -> 0000000c,
+						   sum = sum + 0000000c
+						*/
+						pre_carry = reg_mem[temp].contents = post_carry = ((dst + src)&0xFF) + ((dst + src)>>8);
+						//reg_mem[temp].contents = post_carry = ((dst + src)&0xFF) + ((dst + src)>>8);
+						reg_mem[FLAGS].contents	 = FLAG_H((pre_carry&0x0F)!=((dst&0x0F)+(src&0X0F))); //set if a carry from the low-order nibble occurred 
+						flag_d = 0;
+						break;
+					case 0x02: /* SUB */
+						pre_carry = reg_mem[temp].contents = post_carry = dst - src;
+						//reg_mem[temp].contents = post_carry = dst - src;
+						reg_mem[FLAGS].contents	 = FLAG_H((pre_carry&0x0F)!=((dst&0x0F)-(src&0X0F))); //set if a carry from the low-order nibble occurred 
+						flag_d = 1;
+						break;
+					case 0x03: /* SBC */
+						pre_carry = reg_mem[temp].contents = post_carry = ((dst - src)&0xFF) - ((dst - src)>>8); //similar idea as ADC
+						//reg_mem[temp].contents = post_carry = ((dst - src)&0xFF) - ((dst - src)>>8); //similar idea as ADC
+						reg_mem[FLAGS].contents	 = FLAG_H((pre_carry&0x0F)!=((dst&0x0F)-(src&0X0F))); //set if a carry from the low-order nibble occurred  
+						flag_d = 1;
+						break;
+					case 0x04: /* OR */
+						pre_carry = reg_mem[temp].contents = post_carry = dst | src;
+						//reg_mem[temp].contents = post_carry = dst | src;
+						C=H=D=V=0;
+						reg_mem[FLAGS].contents	 = FLAG_V(0);
+						break;
+					case 0x05: /* AND */
+						pre_carry = reg_mem[temp].contents = post_carry = dst & src;
+						//reg_mem[temp].contents = post_carry = dst & src;
+						C=H=D=V=0;
+						reg_mem[FLAGS].contents	 = FLAG_V(0);
+						break;
+					case 0x06: /* TCM */
+						post_carry = (~dst) & src;
+						C=H=D=V=0;
+						reg_mem[FLAGS].contents	 = FLAG_V(0);
+						break;
+					case 0x07: /* TM */
+						post_carry = dst & src;
+						C=H=D=V=0;
+						reg_mem[FLAGS].contents	 = FLAG_V(0);
+						break;
+					case 0x0A: /* CP */
+						post_carry = dst - src;
+						H=D=0;
+						break;
+					case 0x0B: /* XOR */
+						pre_carry = reg_mem[temp].contents = post_carry = dst ^ src;
+						//reg_mem[temp].contents = post_carry = dst ^ src;
+						C=H=D=V=0;
+						reg_mem[FLAGS].contents	 = FLAG_V(0);
+						break;
+				}
+					
+        }
+     
+ /*check if flag satisfy the condition
+ yes return 1
+ no return 0
+ otherwise-1
+ */
+ int check_cc(BYTE cc)
+ {
+	switch(LBYTE(cc))
+	{
+		case 0x00://0000 F Always false
+		return 0;
+		
+		case 0x01://0001 LT Less than (S XOR V) 1
+		return (S^V);
+		
+		
+		case 0x02://0010 LE Less than or equal (Z OR (S XOR V))=1
+		return(Z | (S^V));
+		
+		case 0x03://0011 ULE Unsigned less than or equal (C OR Z) = 1
+
+		return(C | Z);
+		
+		case 0x04://0100 OV Overflow V=1
+		return V;
+		
+		case 0x05://0101 MI Minus S=1
+		return S;
+		
+		case 0x06://0110 EQ Equal Z = 1
+		return Z;
+		
+		case 0x07://0111 ULT Unsigned less than C=1
+		return C;
+		
+		case 0x08://1000 (blank) Always true
+		return 1;
+		
+		case 0x09://1001 GE Greater than or equal (S XOR V)= 0
+		return(!(S^V));
+		
+		case 0x0A://1010 GT Greater Than (Z OR (S XOR V))=O
+		return(!(Z | (S^V)));
+		
+		
+		case 0x0B://1011 UGT Unsigned greater than (C=O AND Z=O)=1 
+		return(!(C|Z));
+		
+		case 0x0C://1100 NOV No overflow V = 0  
+		return(!V);
+		
+		case 0x0D://1101 PL Plus S= 0
+		return(!S);
+		
+		case 0x0E://1110 NE Not equal Z = 0 
+		return(!Z);
+		
+		case 0x0F://1111 UGE Unsigned greater than equal C=0;
+		return(!C);
+		
+		
+		default: 
+		return-1;
 	}
-	
 }
+		
      
      /* Instruction cycle completed -- check for interrupts 
         - call device check
