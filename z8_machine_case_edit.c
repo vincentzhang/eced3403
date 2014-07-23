@@ -113,9 +113,19 @@ while (running && sanity < 24)
      	 hnib = HBYTE(inst);//get MS Nibble
      	 lnib = LBYTE(inst);//get LS nibble	
      	 
-     	 /*check MS 0-
+     	 /*check LS 2-7 the special case*//*----------------need to fill up*/
      	 
+     	 
+     	 if(lnib >= 0x02 && lnib <= 0x07)
+     	 {
+     	 	if() 
+     	
+     	
+     	
+     	
+     	 }
 	
+	else if (lnib >= 0x08)
 	
 	
 }
