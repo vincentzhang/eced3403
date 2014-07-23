@@ -83,7 +83,7 @@ BYTE src;        //SRC operand
 BYTE dst;        // DST operand 
 BYTE hnib;   //MS nibble 
 BYTE lnib;    // LS nibble 
-
+int C=1,Z=1,S=1,V=1,F2=1,F1=1;//
 
 
 
@@ -109,7 +109,12 @@ write_rm(IRQ, 0);              /* No pending interrupt requests */
 while (running && sanity < 24)
 
 {
-	
+	 inst = prog_mem_fetch();//get instruction
+     	 hnib = HBYTE(inst);//get MS Nibble
+     	 lnib = LBYTE(inst);//get LS nibble	
+     	 
+     	 /*check MS 0-
+     	 
 	
 	
 	
