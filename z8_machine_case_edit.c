@@ -83,7 +83,7 @@ BYTE src;        //SRC operand
 BYTE dst;        // DST operand 
 BYTE hnib;   //MS nibble 
 BYTE lnib;    // LS nibble 
-int C=1,Z=1,S=1,V=1,F2=1,F1=1;//
+int C=0,Z=0,S=0,V=0,F2=0,F1=0;//
 
 
 
@@ -125,8 +125,68 @@ while (running && sanity < 24)
      	
      	 }
 	
-	else if (lnib >= 0x08)
 	
+	/* Check for lnib: 
+	 case:0x08 - 0x0E 
+	 case 0x0F - no-operand instruction*/
+	else if (lnib >= 0x08)
+	{
+	  switch(lnib)
+          {
+          case 0x08: // LD r, R 
+               src = prog_mem_fetch();
+               reg_mem[(RP<<4)|hnib].contents = reg_mem[src].contents;//load the contents from source to dest
+               sanity+=6; 
+          	break;  
+          case 0x09: // LD R,r 
+               dst = prog_mem_fetch();
+               reg_mem[dst].contents = reg_mem[(RP<<4)| hnib].contents;//
+               sanity+=6; 
+               break;               	
+          case 0x0A: /* DJNZ r, dst */
+               dst = prog_mem_fetch();
+               src = RPBLK | high_nib;
+               reg_mem[src] -= 1;
+               if (reg_mem[src] != 0)
+                   /* Reg != 0 -- repeat loop */
+                   /* Signed extend dst to 16 bits if -ve */
+                   pc = pc + SIGN_EXT(dst);
+               C=Z=S=V=0;	//disable all flags changed
+               break;
+          case 0x0B: /* JR cc,RA*/
+          	   cc = high_nib;
+          	   dst = prog_mem_fetch();
+          	   if(cc_check(cc)) //the condition has been satisfied
+          		pc = pc+ SIGN_EXT(dst);
+          	   C=Z=S=V=0;	//disable all flags changed
+			   break;               
+          case 0x0C: /* LD dst, IMM */
+               src = prog_mem_fetch();
+               reg_mem[RPBLK | high_nib] = src;    
+               C=Z=S=V=0;	//disable all flags changed
+			   break;
+          case 0x0D: /* JP cc,DA*/
+          	   cc = high_nib;
+		  	   temph = prog_mem_fetch();
+		  	   templ = prog_mem_fetch();
+			   if(cc_check(cc))			   	   
+				    pc = temph<<8|templ;//the condition has been satisfied
+
+          	   C=Z=S=V=0;	//disable all flags changed
+			   break;              
+          case 0x0E: /* INC dst */
+               dst = RPBLK | high_nib; //RPBLK is fixed + the high_nib give the r0~r15
+               pre_sign = SIGN(reg_mem[dst]);//determine negative SIGN return 128 if negative
+               reg_mem[dst] += 1;
+               sign = SIGN(reg_mem[dst]);//determine negative
+               post_carry=reg_mem[dst];// use post_carry because
+									   // FLAGS function for carry is determine by post_carry
+									   // see instruction before "sanity++" instruction
+               C=0;	//disable all flags changed except S,V,Z
+               break;
+            
+          case 0x0F: /* STOP .. NOP */
+	}
 	
 }
      
