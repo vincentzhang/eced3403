@@ -9,12 +9,9 @@
   ECED 3403
   28 June 14
 */
-#include <stdio.h>
-#include <stdlib.h>
 #include "Z8_IE.h"
 
 #define DEBUG
-#define LINE_LEN   256
 
 enum SREC_ERRORS   {MISSING_S, BAD_TYPE, CHKSUM_ERR};
 
