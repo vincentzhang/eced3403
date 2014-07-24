@@ -14,9 +14,7 @@ int main(int argc, char *argv[])
        exit(0);
 	   }
 
-  /*  read/load s19 code line by line  
-      load() should only take a file pointer as the input
-  */
+    /* load s19 code, should only take a file name as the input */
    	load(argv[1]); // load the s19 file specified by argv[1]
 
    	/* Initialize emulator */
