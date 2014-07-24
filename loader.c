@@ -32,7 +32,7 @@ fclose(fp);
 exit(0);
 }
 
-load(int argc, char *argv[])
+load(char* s19file)
 {
 /* Read and process s-records */
 /* Record access variables */
@@ -45,13 +45,7 @@ unsigned int ah, al, address; /* bytes 3 and 4 */
 signed char chksum;           /* checksum tally */
 unsigned int byte;            /* bytes 5 through checksum byte */
 
-if (argc != 2)
-{
-     printf("Format: parse filename\n");
-     exit(0);
-}
-
-if ((fp = fopen(argv[1], "r")) == NULL)
+if ((fp = fopen(s19file, "r")) == NULL)
 {
      printf("No file specified\n");
      exit(0);
@@ -62,6 +56,7 @@ while (fgets(srec, LINE_LEN, fp) > 0)
 #ifdef DEBUG
 printf("\nsrec: %s\n", srec);
 #endif
+	  // srec stores the current line
      /* Should check min srec length */
      if (srec[0] != 'S')
           srec_error(MISSING_S);        
@@ -87,23 +82,22 @@ printf("Address: %04x\n", address);
      {
           sscanf(&srec[pos], "%2x", &byte);
     /***************************** what i add **********************************************************************/    
-		  switch(srec[1])
+		  switch(srtype)  // srtype is the number of the s19 Record Type
           {
-          case 1: /*load s1 into program memory*/
-          bus(address,&srec[pos],WR,PROG);
-          printf("!!!program");
-          break;
+           case 1: /*load s1 into program memory*/
+           bus(address,&srec[pos],WR,PROG);
+           printf("!!!program");
+           break;
           
-          case 2: /*load s2 into data memory*/
-      	  bus(address,&srec[pos],WR,DATA);
-      	  printf("!!data\n");
+           case 2: /*load s2 into data memory*/
+      	   bus(address,&srec[pos],WR,DATA);
+      	   printf("!!data\n");
+      	   break;
       	  
-		  break;
-      	  
-      	  case 3:/*load s3 into register*/
-      	  write_rm(al,srec[pos]);
-      	  break;
-/*********************************************************************************/			      	
+      	   case 3:/*load s3 into register memory*/
+      	   write_rm(al,srec[pos]);
+      	   break;
+   /*********************************************************************************/			      	
 			}		
 		  chksum += byte;
 #ifdef DEBUG

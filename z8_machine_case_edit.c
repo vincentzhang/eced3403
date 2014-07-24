@@ -10,10 +10,6 @@
 /* Program and data memory size */
 #define PD_MEMSZ  56536
 
-/* Bus signals */
-enum RDWR           {RD, WR};
-enum MEM            {PROG, DATA};
-
 unsigned long sys_clock;
 
 /* Memory arrays */

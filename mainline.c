@@ -2,51 +2,34 @@
  Z8 Interrupt Emulation - Mainline
  
  ECED 3403
- 17 June 2014
+ July 23, 2014
 */
-
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "Z8_IE.h"
 
 int main(int argc, char *argv[])
 { 
-  
-  char instring[LINE_LEN];
-  FILE *fp;
+  	if (argc != 2)
+	{
+       printf("Format: parse filename\n");
+       exit(0);
+	   }
 
-/*read/load s19 code line by line*/
-while (fgets(instring, LINE_LEN, fp) != NULL)
-{
- 
-	instring[LINE_LEN-1] = NUL;
-	load(instring);/* loader*/
-  /* load() cannot be called this way.
-  The way it works is that it opens a file *fp and read line by line and process it based on the first two letters (S1,S2,S3...).
-  But what this load(instring) does is passing the line as an input argument, doesn't match the argument lister of load function. 
-  We'll fix this later.
+  /*  read/load s19 code line by line  
+      load() should only take a file pointer as the input
   */
-	
-}
+   	load(argv[1]); // load the s19 file specified by argv[1]
 
+   	/* Initialize emulator */
+   	reg_mem_init();
+   	reg_mem_device_init(PORT3, UART_device, TXDONE);
+   	reg_mem_device_init(PORT0, TIMER_device, 0x00);
 
+   	write_rm(PORT0,0x8f);
+   	/*initialize stack for write on data memory*/
+   	write_rm(P01M, 0X00);
 
+   	run_machine(); // execute the code in the memory
 
-/* Initialize emulator */
-reg_mem_init();
-reg_mem_device_init(PORT3, UART_device, TXDONE);
-reg_mem_device_init(PORT0, TIMER_device, 0x00);
-
-
-
-write_rm(PORT0,0x8f);
-/*initialize stack for write on data memory*/
-write_rm(P01M, 0X00);
-
-
-run_machine();
-
-getchar();	
-return 0;
+   	getchar();	
+   	return 0;
 }

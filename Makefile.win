@@ -1,0 +1,45 @@
+# Project: Z8_emulator
+# Makefile created by Dev-C++ 4.9.9.2
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = loader.o mainline.o Z8_Machine_IE.o Z8_RegMem_IE.o Z8_UART_IE.o Z8_Timer_IE.o $(RES)
+LINKOBJ  = loader.o mainline.o Z8_Machine_IE.o Z8_RegMem_IE.o Z8_UART_IE.o Z8_Timer_IE.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib"  
+INCS =  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include" 
+BIN  = Z8_emulator.exe
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = $(INCS)  
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Z8_emulator.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(LINKOBJ) -o "Z8_emulator.exe" $(LIBS)
+
+loader.o: loader.c
+	$(CC) -c loader.c -o loader.o $(CFLAGS)
+
+mainline.o: mainline.c
+	$(CC) -c mainline.c -o mainline.o $(CFLAGS)
+
+Z8_Machine_IE.o: Z8_Machine_IE.c
+	$(CC) -c Z8_Machine_IE.c -o Z8_Machine_IE.o $(CFLAGS)
+
+Z8_RegMem_IE.o: Z8_RegMem_IE.c
+	$(CC) -c Z8_RegMem_IE.c -o Z8_RegMem_IE.o $(CFLAGS)
+
+Z8_UART_IE.o: Z8_UART_IE.c
+	$(CC) -c Z8_UART_IE.c -o Z8_UART_IE.o $(CFLAGS)
+
+Z8_Timer_IE.o: Z8_Timer_IE.c
+	$(CC) -c Z8_Timer_IE.c -o Z8_Timer_IE.o $(CFLAGS)

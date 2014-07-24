@@ -28,6 +28,13 @@ enum IMR_BITS     {IRQ0 = 0x01, IRQ1 = 0x02, IRQ2 = 0x04, IRQ3=0x08, INT_ENA = 0
 /* Program and data memory */
 extern BYTE memory[][]; 
 
+/* Bus signals */
+enum RDWR           {RD, WR};
+enum MEM            {PROG, DATA};
+
+/* Bus function */
+void bus(WORD, BYTE* , enum RDWR, enum MEM);
+
 /* Register memory */
 enum DEV_EM_IO    {REG_RD, REG_WR};
 
