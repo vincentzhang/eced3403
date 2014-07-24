@@ -7,7 +7,7 @@
   - turn on diagnostics with define DEBUG
   
   ECED 3403
-  28 June 14
+  23 July 14
 */
 #include "Z8_IE.h"
 
@@ -43,7 +43,7 @@ int srtype;                   /* byte 1 - 0..9 */
 unsigned int length;          /* byte 2 */
 unsigned int ah, al, address; /* bytes 3 and 4 */
 signed char chksum;           /* checksum tally */
-unsigned int byte;            /* bytes 5 through checksum byte */
+BYTE data;            		  /* bytes 5 through checksum byte */
 
 if ((fp = fopen(s19file, "r")) == NULL)
 {
@@ -80,34 +80,41 @@ printf("Address: %04x\n", address);
      /* Read data bytes */
      for (i=0; i<length; i++)
      {
-          sscanf(&srec[pos], "%2x", &byte);
+          sscanf(&srec[pos], "%2x", &data); // save 1 byte to data
     /***************************** what i add **********************************************************************/    
 		  switch(srtype)  // srtype is the number of the s19 Record Type
           {
            case 1: /*load s1 into program memory*/
-           bus(address,&srec[pos],WR,PROG);
-           printf("!!!program");
+           bus(address+pos-8,&data,WR,PROG);
+           #ifdef DEBUG
+           printf("!!Program Memory\n");
+           #endif
            break;
           
            case 2: /*load s2 into data memory*/
-      	   bus(address,&srec[pos],WR,DATA);
-      	   printf("!!data\n");
+      	   bus(address+pos-8,&data,WR,DATA);
+      	   #ifdef DEBUG
+      	   printf("!!Data Memory\n");
+      	   #endif
       	   break;
       	  
       	   case 3:/*load s3 into register memory*/
-      	   write_rm(al,srec[pos]);
+      	   write_rm(al,data); // Register Memory can be represented by lower byte of the address
+      	   #ifdef DEBUG
+      	   printf("!!Register Memory\n");
+      	   #endif
       	   break;
    /*********************************************************************************/			      	
 			}		
-		  chksum += byte;
+		  chksum += data;
 #ifdef DEBUG
-printf("%02x ", byte);    /* Convert two chars to byte */
+printf("%02x ", data);    /* Convert two chars to byte */
 #endif
 	      pos += 2;    /* Skip 2 chars (1 "byte") in srec */
      }
      /* Read chksum byte */
-     sscanf(&srec[pos], "%2x", &byte);
-     chksum += byte;
+     sscanf(&srec[pos], "%2x", &data);
+     chksum += data;
      /* Valid record? */
      if (chksum != -1)
           srec_error(CHKSUM_ERR);

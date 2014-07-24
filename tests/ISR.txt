@@ -1,0 +1,47 @@
+
+
+/* ISR address 0x1000 in vector at 0x0000 */
+memory[PROG][0x0000] = 0x10;
+memory[PROG][0x0001] = 0x00;
+/* Initialize stack to point to data at 0xFFFF */
+write_rm(SPH, 0xFF);
+write_rm(SPL, 0xFF);
+
+
+You need to add that to the very beginning of the emulator to set up the stack and the interrupt vecto
+
+
+
+
+Then this is the code, and the s record:
+
+!Timer ISR at location 0x01000
+SECTION 	PROGRAM
+ORIGIN	%1000
+
+LD		%00,#%00	!Write 0 to port 0 to disable timer
+IRET				!Return to main
+
+!Main program
+ORIGIN	%000C
+
+LD		%FB,%81	!Enable timer interrupts in IMR
+LD		%00,%8A	!Write a delay of 20 (2 * 0x0A) to the timer
+				!in free-running mode
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+
+STOP
+END
+
+
+S1041000E60000BFA9
+S10D000CE6FB81E6008AFFFFFFFFFFFF6F54
+
+
+
+

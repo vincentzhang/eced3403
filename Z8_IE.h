@@ -66,6 +66,8 @@ extern struct reg_mem_el reg_mem[];
 /* Register memory functions */
 extern void reg_mem_init();
 extern void reg_mem_device_init(BYTE, int (*)(BYTE, enum DEV_EM_IO), BYTE);
+void write_rm(BYTE, BYTE);
+BYTE read_rm(BYTE);
 
 /* Device entry points */
 extern int TIMER_device(BYTE, enum DEV_EM_IO);

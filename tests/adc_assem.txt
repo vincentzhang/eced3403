@@ -1,0 +1,27 @@
+SECTION 	PROGRAM
+ORIGIN 	%000C
+
+SRP		#1
+
+ADC		R0,R1 	!Add 0x01 in R1 to 0x0F in R0
+ADC		R0,@R2	!R2 holds 0x13 (R3) - Add 0x81 in R3 to R0
+ADC,		%10,%14	!Add 0x80 in R4 to R0
+ADC		%10,@%15	!R5 holds 0x16 (R6) - Add 0x10 in R6 to R0
+ADC		%10,#%20	!Add 0x20 to R0
+ADC		@%17,#%FF	!R7 holds 0x10 (R0) - Add 0xFF to R0
+
+STOP
+
+SECTION 	REGISTER
+ORIGIN	%0010
+
+BVAL		%0F
+BVAL		%01
+BVAL		%13
+BVAL		%81
+BVAL		%80
+BVAL		%16
+BVAL		%10
+BVAL		%10
+
+END

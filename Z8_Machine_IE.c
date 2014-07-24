@@ -86,7 +86,7 @@ printf("Time: %02d  IRQ: %02x\n", sys_clock, reg_mem[IRQ] . contents);
      switch(sanity)
      {
      case 3:
-            write_rm(PORT0, 0x83); /* Timer: continuous & 3x2 (6) cycles */
+            (PORT0, 0x83); /* Timer: continuous & 3x2 (6) cycles */
             break;
      case 11:
      case 16:
