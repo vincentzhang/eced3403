@@ -1,0 +1,88 @@
+!
+! Program to add two 16-bit numbers
+! Data to sum must be organized as three consecutive words 
+! (six bytes or three MS:LS pairs)
+! Addition takes place in registers R0..R3 (RP points to block %10)
+!
+! ECED 3403
+! 30 May 2014
+!
+! Starting addresses in different sections
+!
+PSEC	EQU	%000C
+DSEC	EQU	%1000
+!
+! Stack MS and LS address (stored in registers FE and FF,
+! respectively).  Stack runs from %FFFF down (CALL, PUSH etc 
+! decrement SP then access)
+!
+STKADDR	EQU	%0000		! Stack address in data mem
+STKREGS	EQU	%FE		! Stack pointer in reg mem
+!
+! MS and LS bytes of first data value 
+!
+D0_MS	EQU	%10
+D0_LS	EQU	%00
+!
+	SECTION PROGRAM
+!
+	ORIGIN	PSEC		! First executable location
+!
+MAIN	SRP	#1		! RP points to registers %10 through %1F
+!
+! Reg R4:R5 pair = Address of MS byte of Data0
+!
+	LD	R4,#D0_MS	! R4 = MS of first word
+	LD	R5,#D0_LS	! R5 = LS of first word
+!
+! R15 points to register pairs (R0:R1 and R2:R3)
+	LD	R15,#%10		! R15 points to R0 (RP | 0)
+!
+! First word (Data0)
+	LDEI	@R15,@RR4	! REG[R15] = DATA[R4:R5]
+	LDEI	@R15,@RR4	! REG[R15 + 1] = DATA[R4:R5 + 1]
+!
+! Second word (Data1)
+	LDEI	@R15,@RR4	! REG[R15 + 2] = DATA[R4:R5 + 2]
+	LDEI	@R15,@RR4	! REG[R15 + 3] = DATA[R4:R5 + 3]
+!
+! Perform 16=bit addition
+	CALL	ADD16
+
+! Store results (Data2)
+	LD	R15,#%10	! @R15 points to R0:R1 (results)
+	LDEI	@RR4,@R15	! DATA[R4:R5 + 4] = REG[R15] 
+	LDEI	@RR4,@R15	! DATA[R4:R5 + 5] = REG[R15 + 1] 
+!
+! All done - burn CPU cycles...
+LOOP	
+	JR	LOOP		! Unconditional relative jump to LOOP
+!
+ADD16
+!
+! Subroutine ADD16()
+! Adds two 16-but numbers together:
+!  R0:R1 = R0:R1 + R2:R3
+! Add values together (LSB and then MSB + Carry)
+! RP points to current register block
+! Carry and overflow are ignored
+!
+	ADD	R1,R3
+	ADC	R0,R2
+	RET			! All done
+!
+	SECTION	DATA
+!
+	ORIGIN	DSEC
+Data0	WVAL	%1234		! First number
+Data1	WVAL	%0001		! Second number
+Data2	BSS	2		! Location for result
+!
+	SECTION REGISTER
+!
+! Stkptr (FE:FF) initialized at assembly-time
+! Value in FE:FF (STKREGS) is STKADDR (2 bytes)
+	ORIGIN	STKREGS		! Stack
+	WVAL   	STKADDR
+!
+	END
