@@ -15,12 +15,23 @@
 #define IE_TEST        /* IE test */
 #define LINE_LEN   256
 
+/* Program and data memory size */
+#define PD_MEMSZ    65536
+
 #define FALSE      0
 #define TRUE       1
 
 #define PRIVATE    static
 #define BYTE       unsigned char
 #define WORD       unsigned short
+#define CARRY_BYTE unsigned short    /* Use to determine if carry set */
+
+/* Special register operations */
+#define FLAG_Z(x)   ((x)<<6 | (FLAGS & 0xBF))   /* Set/clear Z bit */
+#define RPBLK       (RP << 4)                   /* For RP | working register */
+
+#define HBYTE(x)      ((x) >> 4)
+#define LBYTE(x)      ((x) & 0x0F)
 
 #define IRQ_MASK  0x3F             /* IRQ bits 0..5 in IMR */
 enum IMR_BITS     {IRQ0 = 0x01, IRQ1 = 0x02, IRQ2 = 0x04, IRQ3=0x08, INT_ENA = 0x80};

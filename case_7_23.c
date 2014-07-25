@@ -63,12 +63,73 @@ pc = pc + 1;
 return mbr;
 }
 
+ /* check if flag satisfy the condition
+    yes return 1
+    no return 0
+    otherwise -1
+ */
+int check_cc(BYTE cc)
+ {
+	switch(LBYTE(cc))
+	{
+		case 0x00://0000 F Always false
+		return 0;
+		
+		case 0x01://0001 LT Less than (S XOR V) 1
+		return (S^V);
+		
+		
+		case 0x02://0010 LE Less than or equal (Z OR (S XOR V))=1
+		return(Z | (S^V));
+		
+		case 0x03://0011 ULE Unsigned less than or equal (C OR Z) = 1
 
+		return(C | Z);
+		
+		case 0x04://0100 OV Overflow V=1
+		return V;
+		
+		case 0x05://0101 MI Minus S=1
+		return S;
+		
+		case 0x06://0110 EQ Equal Z = 1
+		return Z;
+		
+		case 0x07://0111 ULT Unsigned less than C=1
+		return C;
+		
+		case 0x08://1000 (blank) Always true
+		return 1;
+		
+		case 0x09://1001 GE Greater than or equal (S XOR V)= 0
+		return(!(S^V));
+		
+		case 0x0A://1010 GT Greater Than (Z OR (S XOR V))=O
+		return(!(Z | (S^V)));
+		
+		
+		case 0x0B://1011 UGT Unsigned greater than (C=O AND Z=O)=1 
+		return(!(C|Z));
+		
+		case 0x0C://1100 NOV No overflow V = 0  
+		return(!V);
+		
+		case 0x0D://1101 PL Plus S= 0
+		return(!S);
+		
+		case 0x0E://1110 NE Not equal Z = 0 
+		return(!Z);
+		
+		case 0x0F://1111 UGE Unsigned greater than equal C=0;
+		return(!C);
+		
+		default: 
+		return -1;
+	}
+}
 
 void run_machine()
 {
-
-
 /* Z8 machine emulator
    instruction fetch, decode, and execute 
 */
@@ -80,23 +141,22 @@ BYTE regval;     /* temp to emulate OR instruction */
 running = TRUE;
 sanity = 0;
 
-
 //variable for case test
-BYTE src;        //SRC operand 
+BYTE src;        // SRC operand 
 BYTE dst;        // DST operand 
-BYTE hnib;   //MS nibble 
-BYTE lnib;    // LS nibble 
-BYTE cc;    //condition code
-BYTE dsth; // 16 bit dst hight byte part 
-BYTE dstl; //16 bit dst low byte part
-BYTE ds; // 4bit dst + 4bit src
-BYTE temp;// is the address of register to store the result
+BYTE hnib;       // MS nibble 
+BYTE lnib;    	 // LS nibble 
+BYTE cc;    	 //condition code
+BYTE dsth; 		 // 16 bit dst high byte part 
+BYTE dstl; 		 //16 bit dst low byte part
+BYTE ds; 		 // 4bit dst + 4bit src
+BYTE temp;		 // is the address of register to store the result
 
-BYTE result; // the 8 bit result without carry bit  
+BYTE result; 	 // the 8 bit result without carry bit  
 CARRY_BYTE ctest; // value with carry bit
 //BYTE htest // 8 bit for checking low nibble H flag
-BYTE adr1;// address for Irr 
-BYTE adr2; //address for Irr 
+BYTE adr1;		 // address for Irr 
+BYTE adr2; 		 // address for Irr 
 
 
 // variables for register operations
@@ -105,27 +165,24 @@ int iret=0;//if meet iret:1
 BYTE x;
 WORD dev[2];            	
 int i;
-            	int count;// how many interupts
-            	BYTE y[6]={0,0,0,0,0,0};//STORE the interrupt byte
-            	BYTE stackh,stackl;
-				WORD stack;   // Stack Pointer
-				BYTE pch,pcl; // PC
-				int p01; // p01m
+int count;// how many interupts
+BYTE y[6]={0,0,0,0,0,0};//STORE the interrupt byte
+BYTE stackh,stackl;
+WORD stack;   // Stack Pointer
+BYTE pch,pcl; // PC
+int p01; // p01m
 #ifdef IE_TEST
 write_rm(IMR, INT_ENA | IRQ0); /* PORT 0 interrupts allowed */
 write_rm(IRQ, 0);              /* No pending interrupt requests */
 #endif
 
-
-int C=0,Z=0,S=0,V=0,F2=0,F1=0;//Initial flag all clear
+unsigned int C=0,Z=0,S=0,V=0,F2=0,F1=0;//Initial flag all clear
 while (running && sanity < 24)
-
 {	
 	 inst = prog_mem_fetch();//get instruction
-     	 hnib = HBYTE(inst);//get MS Nibble
-     	 lnib = LBYTE(inst);//get LS nibble	
+	 hnib = HBYTE(inst);//get MS Nibble
+	 lnib = LBYTE(inst);//get LS nibble	
      	
-	
 	/* Check for lnib: 
 	 case:0x08 - 0x0E 
 	 case 0x0F - no-operand instruction*/
@@ -137,7 +194,7 @@ while (running && sanity < 24)
                src = prog_mem_fetch();
                reg_mem[RPBLK|hnib].contents = reg_mem[src].contents;//load the contents from source to dest
                sanity+=6; 
-          	break;  
+          	   break;  
           case 0x09: // LD R,r 
                dst = prog_mem_fetch();
                reg_mem[dst].contents = reg_mem[(RP<<4)| hnib].contents;//
@@ -150,19 +207,19 @@ while (running && sanity < 24)
                if (reg_me[src].contents!= 0)		 
 			   pc = pc+SIGN_EXT(dst);//jump to the relative address is +127-128 
                break;
-          
-		  case 0x0B: /* JR cc,RA*/     
-          	   cc = hnib;           //????????????????????
-          	   dst = prog_mem_fetch();
-          	   if(check_cc(cc)) //cc is true   
-          		pc = pc+ SIGN_EXT(dst);
-          	    break;               
-          
+		  case 0x0B: /* JR cc,RA (Jump Relative based on condition codes)*/     
+          	   // first byte: cc|opcode
+          	   // second byte: dst
+          	   // third byte address: PC. 
+          	   cc = hnib;           // Fixed. ????????
+          	   dst = prog_mem_fetch(); // pc has been incremented in this command
+          	   if(check_cc(cc)) // if cc is true   
+			     pc = pc + SIGN_EXT(dst);
+    		   break;               
 		  case 0x0C: /* LD dst, IMM */
                src = prog_mem_fetch();
                reg_mem[RPBLK | hnib] = src;    
-              break;
-          
+               break;
 		  case 0x0D: // JP cc,DA
           	   cc = hnib;
 		  	   dsth = prog_mem_fetch();  
@@ -176,31 +233,32 @@ while (running && sanity < 24)
                sign = SIGN(reg_mem[dst]);//check the sign
                reg_mem[dst] += 1;
                
-			  ///???????????   check example 
+			   ///???????????   check example 
               
                break;
             
-          case 0x0F: /* STOP .. NOP */
-          switch (hnib)
+          case 0x0F: /* STOP .. NOP */ 
+          	   switch (hnib)
                {
-               case 0x06: // stop 6f  
-                    running = FALSE;
-               		break;
-               //case 0x07: /*HALT */???????????????????????????????????????
+	   		   		  case 0x06: // stop 6f  
+                      running = FALSE;
+               		  break;
+               		  
+				 	  //case 0x07: /*HALT suspends execution and waits for an interrupt.*/???????????????
                		
-               case 0x08: /* DI dst */
-               		reg_mem[IMR].contents &= ~INT_ENA;//disable interrrupt	
-               		sanity+=6;
-               		break;
+               		  case 0x08: /* DI dst */
+               		  reg_mem[IMR].contents &= ~INT_ENA;//disable interrrupt	
+               		  sanity+=6;
+               		  break;
                
-               case 0x09: // EI  
-               		reg_mem[IMR].contents |= INT_ENA;//IMR  0x80 bit 7 set
-               		sanity+=6;
-               		break;
+               		  case 0x09: // EI  
+               		  reg_mem[IMR].contents |= INT_ENA;//IMR  0x80 bit 7 set
+               		  sanity+=6;
+               		  break;
                
-               case 0x0A: /* RET     ??????????????????????
-               		temphigh = reg_mem[SPH];
-               		templow = reg_mem[SPL];
+               		  case 0x0A: /* RET     ??????????????????????
+               		  	   temphigh = reg_mem[SPH];
+               		  	   templow = reg_mem[SPL];
                		pc = ((temphigh << 8) | templow);
                		reg_mem[SPL] += 2;
                		C=Z=S=V=D=H=F2=F1=0;*/
@@ -619,80 +677,6 @@ while (running && sanity < 24)
 				break;
 		}
 		
-	
-	
-     */
- /*check if flag satisfy the condition
- yes return 1
- no return 0
- otherwise-1
- */
- int check_cc(BYTE cc)
- {
-	switch(LBYTE(cc))
-	{
-		case 0x00://0000 F Always false
-		return 0;
-		
-		case 0x01://0001 LT Less than (S XOR V) 1
-		return (S^V);
-		
-		
-		case 0x02://0010 LE Less than or equal (Z OR (S XOR V))=1
-		return(Z | (S^V));
-		
-		case 0x03://0011 ULE Unsigned less than or equal (C OR Z) = 1
-
-		return(C | Z);
-		
-		case 0x04://0100 OV Overflow V=1
-		return V;
-		
-		case 0x05://0101 MI Minus S=1
-		return S;
-		
-		case 0x06://0110 EQ Equal Z = 1
-		return Z;
-		
-		case 0x07://0111 ULT Unsigned less than C=1
-		return C;
-		
-		case 0x08://1000 (blank) Always true
-		return 1;
-		
-		case 0x09://1001 GE Greater than or equal (S XOR V)= 0
-		return(!(S^V));
-		
-		case 0x0A://1010 GT Greater Than (Z OR (S XOR V))=O
-		return(!(Z | (S^V)));
-		
-		
-		case 0x0B://1011 UGT Unsigned greater than (C=O AND Z=O)=1 
-		return(!(C|Z));
-		
-		case 0x0C://1100 NOV No overflow V = 0  
-		return(!V);
-		
-		case 0x0D://1101 PL Plus S= 0
-		return(!S);
-		
-		case 0x0E://1110 NE Not equal Z = 0 
-		return(!Z);
-		
-		case 0x0F://1111 UGE Unsigned greater than equal C=0;
-		return(!C);
-		
-		
-		default: 
-		return-1;
-	}
-}
-		
- 	 
-	 
-	 
-	 
-	 
 	 /* Instruction cycle completed -- check for interrupts 
         - call device check
         - TRAPs - software-generated interrupts (SWI, SVC, etc) are caused
@@ -827,18 +811,8 @@ printf("Interrupt on IMR: %02x\n",
 				}
 			
 						
-		}
-				
-					
-				 
-					
-					
+		}				
 	}
-				
-				
-                
-
-
 
      sys_clock++;
      sanity++;    

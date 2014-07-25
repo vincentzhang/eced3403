@@ -7,9 +7,6 @@
 
 #include "Z8_IE.h"
 
-/* Program and data memory size */
-#define PD_MEMSZ  56536
-
 unsigned long sys_clock;
 
 /* Memory arrays */
