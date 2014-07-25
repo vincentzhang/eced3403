@@ -227,14 +227,20 @@ while (running && sanity < 24)
 			   if(check_cc(cc))			   	   
 				    pc = dsth<<8|dstl;//the condition true
 			   break;              
-          
-		  case 0x0E: /* INC dst re r 6*/   //??????????????  not sure flag 
+		  case 0x0E: /* INC dst re r 6*/  //??????????????  not sure flag  
                dst = RPBLK | hnib; 
                sign = SIGN(reg_mem[dst]);//check the sign
                reg_mem[dst] += 1;
                
 			   ///???????????   check example 
-              
+               // ZVS are affected
+               /* Update flags */
+               FLAGS = FLAG_Z(reg_mem[dst] == 0);
+               /* 
+               FLAG_S(SIGN(reg_mem[dst]));
+               FLAG_V(SIGN(reg_mem[dst]) != sign); 
+               */
+               
                break;
             
           case 0x0F: /* STOP .. NOP */ 
@@ -259,24 +265,29 @@ while (running && sanity < 24)
                		  case 0x0A: /* RET     ??????????????????????
                		  	   temphigh = reg_mem[SPH];
                		  	   templow = reg_mem[SPL];
-               		pc = ((temphigh << 8) | templow);
-               		reg_mem[SPL] += 2;
-               		C=Z=S=V=D=H=F2=F1=0;*/
-               		sanity+=14;
-               break;
-               
-               
-			   case 0x0B: //IRET  ????????  INTERRUPT RETURN  check interrupt with below code
-               		
-					   
-					pc = PC_saved ;
-					reg_mem[FLAGS].contents= FLAGS_saved ;
-					reg_mem[IMR] . contents |= INT_ENA;//reenable the interrupt
-					printf("Interrupt return to %04x\n",pc);
-					printf("Flag before interrupt %02x\n",FLAGS_saved);
-               		sanity+=16;
-            
-               break;
+               			   pc = ((temphigh << 8) | templow);
+               			   reg_mem[SPL] += 2;
+               			   C=Z=S=V=D=H=F2=F1=0;*/
+               			   sanity+=14;
+         			   break;
+
+					   case 0x0B: //IRET  ????????  INTERRUPT RETURN  check interrupt with below code
+					        // TODO:
+					   		// FLAGS <- @SP
+					   		// SP <- SP+1
+					   		// PC <- @SP
+					   		// SP <- SP+2
+					   		// IMR(7) <- 1, set Bit7 of IMR to 1, already done
+					   		
+							pc = PC_saved; // where is PC_saved defined??
+							reg_mem[FLAGS].contents= FLAGS_saved ; // and where defined?
+							reg_mem[IMR] . contents |= INT_ENA; // IMR(7)<-1, reenable the interrupt
+							#ifdef DIAGNOSTICS
+							printf("Interrupt return to %04x\n",pc);
+							printf("Flag before interrupt %02x\n",FLAGS_saved);
+							#endif
+		               		sanity+=16;
+		               		break;
                
                case 0x0C: //RCF 
                		reg_mem[FLAGS].contents	 = FLAG_C(0); // clear flag C to 0 
