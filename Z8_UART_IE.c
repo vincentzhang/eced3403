@@ -40,6 +40,22 @@ BYTE UART_RECV_REG; // the input register
 BYTE UART_TRAN_REG; // the output register
 unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buffer
 
+/* Constants */
+INPUT_FILENAME = "UART_input.TXT";
+OUTPUT_FILENAME = "UART_output.TXT";
+
+if ((fpin = fopen(INPUT_FILENAME, "r")) == NULL)
+{
+     printf("No input file specified\n");
+     exit(0);
+}
+
+if ((fpout = fopen(OUTPUT_FILENAME, "w")) == NULL)
+{
+     printf("No output file specified\n");
+     exit(0);
+}
+
 int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
 {
 /* Emulate UART device port:
