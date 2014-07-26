@@ -47,7 +47,7 @@ OUTPUT_FILENAME = "UART_output.TXT";
 if ((fpin = fopen(INPUT_FILENAME, "r")) == NULL)
 {
      printf("No input file specified\n");
-     exit(0);
+     uart_time = -1;
 }
 
 if ((fpout = fopen(OUTPUT_FILENAME, "w")) == NULL)
@@ -99,6 +99,8 @@ int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
   else if (cmd == REG_WR)
   {
       // TODO: write to PORT 
+      uart_char_to_go = reg_mem[SIO].contents; // the chars waiting to be sent
+      
       if ( reg_mem[PORT3].contents & TXORUN ) // if Overrun    
       {
           reg_mem[PORT3].contents &= ~TXORUN; // clear OVERRUN
@@ -121,8 +123,6 @@ void UART_check()
    - decrement TX timer if running
    - when timer reaches zero, "transmit" character 
 */
-// int sysclock;
-// what is TX timer?
 
    TXTimer--;
    if ( TXTimer == 0)
