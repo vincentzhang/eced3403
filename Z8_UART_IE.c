@@ -35,7 +35,7 @@ PRIVATE unsigned long TXTimer;
 FILE *fpin, *fpout; // input and output file 
 BYTE data[LINE_LEN];// keep data read from the input file
 
-unsigned int UART_TIME; // the time read from input file
+int uart_time; // the time read from input file
 BYTE UART_RECV_REG; // the input register
 BYTE UART_TRAN_REG; // the output register
 unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buffer
@@ -50,14 +50,14 @@ int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
 // Data on P30-P33(File in our case) -> Input Buffer -> Input Register -> BUS
 // Reading from P3 returns the data on the input pins and in the output register
   {
-    if (sys_clock >= UART_TIME)
+    if (sys_clock >= uart_time)
     {
       if (!UART_RECV_PENDING) // if pending, do NOT do anything
       {
           if ( fgets(data, LINE_LEN, fpin) > 0 )
           { // if there's still content in the file, read and write to UART device
             // file format: time, device, data
-            UART_TIME = data[0]; // save the next interrupt time
+            uart_time = data[0]; // save the next interrupt time
             UART_RECV_REG = data[2];
             UART_RECV_PENDING = TRUE;
             
