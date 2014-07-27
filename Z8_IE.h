@@ -49,7 +49,7 @@ extern unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buff
 enum IMR_BITS     {IRQ0 = 0x01, IRQ1 = 0x02, IRQ2 = 0x04, IRQ3=0x08, INT_ENA = 0x80};
 
 /* Program and data memory */
-extern BYTE memory[][]; 
+extern BYTE memory[2][PD_MEMSZ]; 
 
 /* Bus signals */
 enum RDWR           {RD, WR};

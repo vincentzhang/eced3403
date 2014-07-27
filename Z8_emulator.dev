@@ -3,7 +3,7 @@ FileName=Z8_emulator.dev
 Name=Z8_emulator
 UnitCount=7
 Type=1
-Ver=1
+Ver=2
 ObjFiles=
 Includes=
 Libs=
@@ -28,6 +28,8 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
 CompilerSettings=
+LogOutput=
+LogOutputEnabled=0
 
 [Unit1]
 FileName=loader.c
@@ -59,18 +61,8 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit4]
-FileName=Z8_Machine_IE.c
-CompileCpp=0
-Folder=Z8_emulator
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
 [Unit5]
-FileName=Z8_RegMem_IE.c
+FileName=Z8_UART_IE.c
 CompileCpp=0
 Folder=Z8_emulator
 Compile=1
@@ -80,7 +72,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit6]
-FileName=Z8_UART_IE.c
+FileName=Z8_Timer_IE.c
 CompileCpp=0
 Folder=Z8_emulator
 Compile=1
@@ -106,9 +98,20 @@ OriginalFilename=
 ProductName=
 ProductVersion=
 AutoIncBuildNr=0
+SyncProduct=0
 
 [Unit7]
-FileName=Z8_Timer_IE.c
+FileName=C:\Users\Administrator\Desktop\Z8_IE_0723\Z8_Machine_IE.c
+CompileCpp=0
+Folder=Z8_emulator
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit4]
+FileName=Z8_RegMem_IE.c
 CompileCpp=0
 Folder=Z8_emulator
 Compile=1
