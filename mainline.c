@@ -25,11 +25,6 @@ int main(int argc, char *argv[])
    	
    	/* Initialize UART device */
 	UART_init();
-	
-   	// write_rm(PORT0,0x8f); // will be removed, since timer needs to be set by the user
-   	/* initialize stack for write on data memory */
-   	// TODO: should it be set by the user?
-    // write_rm(P01M, 0X00);
 
    	run_machine(); // execute the code in the memory
 
