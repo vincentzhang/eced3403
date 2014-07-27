@@ -21,6 +21,9 @@ int main(int argc, char *argv[])
    	reg_mem_init();
    	reg_mem_device_init(PORT3, UART_device, TXDONE);
    	reg_mem_device_init(PORT0, TIMER_device, 0x00);
+   	//TODO: add init for SIO
+   	reg_mem_device_init(SIO, UART_device, TXDONE);
+   	
 
    	write_rm(PORT0,0x8f);
    	/*initialize stack for write on data memory*/
