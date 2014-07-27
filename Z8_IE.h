@@ -34,9 +34,6 @@ FILE *uart_finput, *uart_foutput; // input and output file
 extern BYTE uart_line[];// keep data read from the input file
 extern BYTE uart_char; // the data to be put in to SIO
 extern int uart_time; // the time read from input file
-extern BYTE UART_RECV_REG; // the input register
-extern BYTE UART_TRAN_REG; // the output register
-extern unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buffer
 
 /* Special register operations */
 #define FLAG_Z(x)   ((x)<<6 | (FLAGS & 0xBF))   /* Set/clear Z bit */

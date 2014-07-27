@@ -36,9 +36,6 @@ BYTE uart_line[LINE_LEN];// keep data read from the input file
 BYTE uart_char; // the data to be put in to SIO
 int uart_time; // the time read from input file
 BYTE uart_char_to_go; // the char to be sent to UART device
-BYTE UART_RECV_REG; // the input register
-BYTE UART_TRAN_REG; // the output register
-unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buffer
 
 /* open file and read first time value */
 void UART_init()
@@ -81,36 +78,22 @@ int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
 	     uart_char = uart_line[2]; // read the data from uart
 	   }
 
-            {
-              reg_mem[SIO] . contents = UART_RECV_REG; // load the input register content to SIO
-              // clear the register and interrupt initialization
-              UART_RECV_PENDING = FALSE; // nothing in the input register
-              UART_RECV_REG = 0x00; // clear all the bits
-              reg_mem[PORT3].contents &= ~RCVDONE; // no data in the input register
-              reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
-            }
-          }
-    }
+       reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
   }
-
   else if (cmd == REG_WR) // write to UART
   {   
+      TXTimer = sys_clock + 100;
       uart_char_to_go = reg_mem[SIO].contents; // the chars waiting to be sent
-      
+      reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
 
-      if ( reg_mem[PORT3].contents & TXORUN ) // if Overrun    
-      {
-          reg_mem[PORT3].contents &= ~TXORUN; // clear OVERRUN
-      }
-      else // reload
-      {
-          if (reg_mem[PORT3].contents & TXDONE)   // if the previous transmit is done
-          {
-             reg_mem[SIO] . contents = 0x12;  // TODO: Write something to PORT3
-          }     
-          TXTimer = sys_clock + 100; 
-          reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
-      }
+    //  if ( reg_mem[PORT3].contents & TXORUN ) // if Overrun    
+    //  {
+    //      reg_mem[PORT3].contents &= ~TXORUN; // clear OVERRUN
+    //  }
+    //  else // reload
+    //  {
+         
+    //  }
   }
   
 }
@@ -121,14 +104,21 @@ void UART_check()
    - decrement TX timer if running
    - when timer reaches zero, "transmit" character 
 */
-
+   // transmit timer
    TXTimer--;
+   /*
+   Set UART timer to random value (base_value +|- random) and countdown
+   on each clock tick -- set TXDONE when char finally written
+   */
    if ( TXTimer == 0 )
    {
+  	  fprintf(uart_foutput, "%i\n", uart_char_to_go);
+  	  reg_mem[PORT3].contents |= TXDONE;
   	// when TXTimer reaches zero, signal IRQ3 interrupt
       reg_mem[IRQ] . contents |= IRQ3;  /* Signal IRQ3 - UART interrupt */
    }
-   
+
+   // receive timer
    if ( sys_clock >= uart_time ) // time to signal interrupt ?
    {
       // Check for unread SIO (RCVDONE set -> RCVORUN)
@@ -137,16 +127,11 @@ void UART_check()
 	  	 printf("Warning: PORT3 Overrun!!\n");
 	  	 return; // do nothing when there's overrun
 	  }
+      // when UART_check() finds system clock tick >= time, the character has 
+      //  been received -- can signal RCVDONE
       reg_mem[PORT3].contents |= RCVDONE; // set RCVDONE
       reg_mem[IRQ] . contents |= IRQ3;  /* Signal IRQ3 - UART interrupt */
    }
    
-    // when UART_check() finds system clock tick >= time, the character has 
-    //  been received -- can signal RCVDONE
-         if (sys_clock >= uart_output_time)
-      {
-	   	 fprintf(uart_fpout, "%i\n", uart_char_to_go);
-	  // 	 port3 <- uart; 
-	  //  	 IRQ < IRQ3 / 
-		}
+
 }
