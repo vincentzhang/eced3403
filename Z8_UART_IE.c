@@ -30,30 +30,37 @@
 
 #include "Z8_IE.h"
 
-//variable lists
+// variable lists
 PRIVATE unsigned long TXTimer;
-FILE *fpin, *fpout; // input and output file 
-BYTE data[LINE_LEN];// keep data read from the input file
-
+BYTE uart_line[LINE_LEN];// keep data read from the input file
+BYTE uart_char; // the data to be put in to SIO
 int uart_time; // the time read from input file
+BYTE uart_char_to_go; // the char to be sent to UART device
 BYTE UART_RECV_REG; // the input register
 BYTE UART_TRAN_REG; // the output register
 unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buffer
 
-/* Constants */
-INPUT_FILENAME = "UART_input.TXT";
-OUTPUT_FILENAME = "UART_output.TXT";
-
-if ((fpin = fopen(INPUT_FILENAME, "r")) == NULL)
+/* open file and read first time value */
+void UART_init()
 {
-     printf("No input file specified\n");
-     uart_time = -1;
-}
+ 	 if ((uart_finput = fopen(INPUT_FILENAME, "r")) == NULL)
+	{
+	     printf("No input file specified\n");
+	     uart_time = -1;
+	}
 
-if ((fpout = fopen(OUTPUT_FILENAME, "w")) == NULL)
-{
-     printf("No output file specified\n");
-     exit(0);
+	if ((uart_foutput = fopen(OUTPUT_FILENAME, "w")) == NULL)
+	{
+	     printf("No output file specified\n");
+	     exit(0);
+	}
+	
+	// read first time value
+	if (fgets(uart_line, LINE_LEN, uart_finput) > 0)
+	{
+	   		uart_time = uart_line[0]; // read the next interrupt time
+			uart_char = uart_line[2]; // read the data from uart
+	}					
 }
 
 int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
@@ -61,20 +68,22 @@ int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
 /* Emulate UART device port:
    - called after Port 3 or SIO have been read or written 
 */
-  if (cmd == REG_RD)  // Z8 reading from UART device
-// READ: Z8 read from UART
-// Data on P30-P33(File in our case) -> Input Buffer -> Input Register -> BUS
-// Reading from P3 returns the data on the input pins and in the output register
+  if (cmd == REG_RD) // READ: Z8 read from UART
   {
-    if (sys_clock >= uart_time)
-    {
-      if (!UART_RECV_PENDING) // if pending, do NOT do anything
-      {
-          if ( fgets(data, LINE_LEN, fpin) > 0 )
-          { // if there's still content in the file, read and write to UART device
+       reg_mem[SIO].contents = uart_char; // load char to SIO
+       reg_mem[PORT3].contents &= ~RCVDONE; // clear RCVDONE after loading char, no data received from UART
+      
+	  // read next char
+      if (reg_mem[PORT3].contents & RCVDONE) // if pending, OVERRUN
+      {					  
+		    // read if there's still content in the file 
             // file format: time, device, data
-            uart_time = data[0]; // save the next interrupt time
-            UART_RECV_REG = data[2];
+          	if (fgets(uart_line, LINE_LEN, uart_finput) > 0)
+			{
+	   		   uart_time = uart_line[0]; // read the next interrupt time
+			   uart_char = uart_line[2]; // read the data from uart
+   			   }
+
             UART_RECV_PENDING = TRUE;
             
             if ( UART_RECV_PENDING && (reg_mem[PORT3].contents & RCVDONE) ) // if still pending, must raise overrun
@@ -91,16 +100,14 @@ int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
               reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
             }
           }
-      } 
     }
   }
-// Port 3 lines are fixed as four input
-// (P30-P33) and four output (P34-P37) and do not have an input and output register for each bit.
-  else if (cmd == REG_WR)
-  {
-      // TODO: write to PORT 
+
+  else if (cmd == REG_WR) // write to UART
+  {   
       uart_char_to_go = reg_mem[SIO].contents; // the chars waiting to be sent
       
+
       if ( reg_mem[PORT3].contents & TXORUN ) // if Overrun    
       {
           reg_mem[PORT3].contents &= ~TXORUN; // clear OVERRUN
@@ -115,6 +122,7 @@ int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
           reg_mem[IRQ].contents &= ~IRQ3; // clear interrupt bit
       }
   }
+  
 }
 
 void UART_check()
@@ -125,8 +133,28 @@ void UART_check()
 */
 
    TXTimer--;
-   if ( TXTimer == 0)
+   if ( TXTimer == 0 )
    {
+  	// when TXTimer reaches zero, signal IRQ3 interrupt
       reg_mem[IRQ] . contents |= IRQ3;  /* Signal IRQ3 - UART interrupt */
    }
+   
+   if ( sys_clock >= uart_time ) // time to signal interrupt ?
+   {
+      // Check for unread SIO (RCVDONE set -> RCVORUN)
+      if (reg_mem[PORT3].contents & RCVDONE) {
+	  reg_mem[PORT3].contents |= RCVORUN;
+	  printf("Warning: PORT3 Overrun!!\n");
+	  }
+      reg_mem[PORT3].contents |= RCVDONE; // set RCVDONE
+   }
+   
+    // when UART_check() finds system clock tick >= time, the character has 
+    //  been received -- can signal RCVDONE
+         if (sys_clock >= uart_output_time)
+      {
+	   	 fprintf(uart_fpout, "%i\n", uart_char_to_go);
+	  // 	 port3 <- uart; 
+	  //  	 IRQ < IRQ3 / 
+		}
 }
