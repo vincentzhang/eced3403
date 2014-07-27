@@ -140,6 +140,7 @@ BYTE regval;     /* temp to emulate OR instruction */
 
 running = TRUE;
 sanity = 0;
+sys_clock = 0;
 
 //variable for case test
 BYTE src;        // SRC operand 

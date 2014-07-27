@@ -26,6 +26,18 @@
 #define WORD       unsigned short
 #define CARRY_BYTE unsigned short    /* Use to determine if carry set */
 
+/* Constants */
+#define INPUT_FILENAME "UART_input.TXT"
+#define OUTPUT_FILENAME "UART_output.TXT"
+FILE *uart_finput, *uart_foutput; // input and output file 
+
+extern BYTE uart_line[];// keep data read from the input file
+extern BYTE uart_char; // the data to be put in to SIO
+extern int uart_time; // the time read from input file
+extern BYTE UART_RECV_REG; // the input register
+extern BYTE UART_TRAN_REG; // the output register
+extern unsigned char UART_RECV_PENDING; // TRUE if the UART is still in the buffer
+
 /* Special register operations */
 #define FLAG_Z(x)   ((x)<<6 | (FLAGS & 0xBF))   /* Set/clear Z bit */
 #define RPBLK       (RP << 4)                   /* For RP | working register */
@@ -74,6 +86,12 @@ extern struct reg_mem_el reg_mem[];
 #define SPH       0xFE
 #define SPL       0xFF
 
+/* UART bits */
+#define TXDONE     0x04 // B2
+#define TXORUN     0x08 // B3
+#define RCVDONE    0x10 // B4
+#define RCVORUN    0x20 // B5
+
 /* Register memory functions */
 extern void reg_mem_init();
 extern void reg_mem_device_init(BYTE, int (*)(BYTE, enum DEV_EM_IO), BYTE);
@@ -83,12 +101,7 @@ BYTE read_rm(BYTE);
 /* Device entry points */
 extern int TIMER_device(BYTE, enum DEV_EM_IO);
 extern int UART_device(BYTE, enum DEV_EM_IO);
-
-/* UART bits */
-#define TXDONE     0x04 // B2
-#define TXORUN     0x08 // B3
-#define RCVDONE    0x10 // B4
-#define RCVORUN    0x20 // B5
+void UART_init();
 
 extern unsigned long sys_clock;
 
