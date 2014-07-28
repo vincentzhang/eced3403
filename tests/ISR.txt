@@ -25,8 +25,8 @@ IRET				!Return to main
 !Main program
 ORIGIN	%000C
 
-LD		%FB,%81	!Enable timer interrupts in IMR
-LD		%00,%8A	!Write a delay of 20 (2 * 0x0A) to the timer
+LD		%FB,#%81	!Enable timer interrupts in IMR
+LD		%00,#%8A	!Write a delay of 20 (2 * 0x0A) to the timer
 				!in free-running mode
 NOP
 NOP

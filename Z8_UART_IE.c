@@ -90,10 +90,6 @@ int UART_device(BYTE reg_no, enum DEV_EM_IO cmd)
     //  {
     //      reg_mem[PORT3].contents &= ~TXORUN; // clear OVERRUN
     //  }
-    //  else // reload
-    //  {
-         
-    //  }
   }
   
 }
@@ -106,16 +102,11 @@ void UART_check()
 */
    // transmit timer
    TXTimer--;
-   /*
-   Set UART timer to random value (base_value +|- random) and countdown
-   on each clock tick -- set TXDONE when char finally written
-   */
+   // set TXDONE when char finally written
    if ( TXTimer == 0 )
    {
   	  fprintf(uart_foutput, "%i\n", uart_char_to_go);
   	  reg_mem[PORT3].contents |= TXDONE;
-  	// when TXTimer reaches zero, signal IRQ3 interrupt
-      reg_mem[IRQ] . contents |= IRQ3;  /* Signal IRQ3 - UART interrupt */
    }
 
    // receive timer
